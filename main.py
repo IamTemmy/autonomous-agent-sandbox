@@ -14,6 +14,10 @@ AGENT_RADIUS = 5
 FOOD_RADIUS = 3
 EAT_DISTANCE = 8
 
+STARTING_ENERGY = 100
+ENERGY_LOSS_RATE = 0.08
+FOOD_ENERGY_GAIN = 30
+
 BACKGROUND_COLOR = (20, 20, 20)
 AGENT_COLOR = (0, 255, 100)
 FOOD_COLOR = (255, 80, 80)
@@ -35,23 +39,19 @@ def create_food():
     }
 
 
-agents = []
-
-for _ in range(AGENT_COUNT):
-    agents.append({
+def create_agent():
+    return {
         "x": random.randint(AGENT_RADIUS, WIDTH - AGENT_RADIUS),
         "y": random.randint(AGENT_RADIUS, HEIGHT - AGENT_RADIUS),
         "dx": random_velocity(),
         "dy": random_velocity(),
+        "energy": STARTING_ENERGY,
         "food_eaten": 0
-    })
+    }
 
 
-foods = []
-
-for _ in range(FOOD_COUNT):
-    foods.append(create_food())
-
+agents = [create_agent() for _ in range(AGENT_COUNT)]
+foods = [create_food() for _ in range(FOOD_COUNT)]
 
 running = True
 
@@ -71,7 +71,13 @@ while running:
             FOOD_RADIUS
         )
 
-    for agent in agents:
+    for agent in agents[:]:
+
+        agent["energy"] -= ENERGY_LOSS_RATE
+
+        if agent["energy"] <= 0:
+            agents.remove(agent)
+            continue
 
         agent["x"] += agent["dx"]
         agent["y"] += agent["dy"]
@@ -89,6 +95,7 @@ while running:
                 foods.remove(food)
                 foods.append(create_food())
                 agent["food_eaten"] += 1
+                agent["energy"] += FOOD_ENERGY_GAIN
 
         pygame.draw.circle(
             screen,
