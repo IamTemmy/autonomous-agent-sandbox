@@ -3,6 +3,7 @@ import random
 import math
 import csv
 import os
+import argparse
 from collections import Counter
 
 pygame.init()
@@ -10,8 +11,6 @@ pygame.init()
 WIDTH = 800
 HEIGHT = 600
 FPS = 60
-
-EXPERIMENT_PRESET = "balanced"
 
 PRESETS = {
     "balanced": {
@@ -48,6 +47,17 @@ PRESETS = {
     }
 }
 
+
+parser = argparse.ArgumentParser(description="Run the Autonomous Agent Sandbox simulation.")
+parser.add_argument(
+    "--preset",
+    choices=PRESETS.keys(),
+    default="balanced",
+    help="Experiment preset to run: balanced, scarce, abundant, or harsh."
+)
+
+args = parser.parse_args()
+EXPERIMENT_PRESET = args.preset
 preset = PRESETS[EXPERIMENT_PRESET]
 
 AGENT_COUNT = preset["agent_count"]
