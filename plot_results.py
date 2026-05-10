@@ -1,0 +1,73 @@
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+
+LOG_FILE = "data/simulation_log.csv"
+PLOTS_FOLDER = "plots"
+
+os.makedirs(PLOTS_FOLDER, exist_ok=True)
+
+data = pd.read_csv(LOG_FILE)
+
+# -----------------------------
+# Population Plot
+# -----------------------------
+plt.figure(figsize=(10, 5))
+plt.plot(data["frame"], data["population"])
+plt.title("Population Over Time")
+plt.xlabel("Frame")
+plt.ylabel("Population")
+plt.grid(True)
+
+plt.savefig(f"{PLOTS_FOLDER}/population_plot.png")
+plt.close()
+
+# -----------------------------
+# Energy Plot
+# -----------------------------
+plt.figure(figsize=(10, 5))
+plt.plot(data["frame"], data["average_energy"])
+plt.title("Average Energy Over Time")
+plt.xlabel("Frame")
+plt.ylabel("Average Energy")
+plt.grid(True)
+
+plt.savefig(f"{PLOTS_FOLDER}/energy_plot.png")
+plt.close()
+
+# -----------------------------
+# Births and Deaths Plot
+# -----------------------------
+plt.figure(figsize=(10, 5))
+plt.plot(data["frame"], data["births"], label="Births")
+plt.plot(data["frame"], data["deaths"], label="Deaths")
+
+plt.title("Births and Deaths Over Time")
+plt.xlabel("Frame")
+plt.ylabel("Count")
+plt.legend()
+plt.grid(True)
+
+plt.savefig(f"{PLOTS_FOLDER}/births_deaths_plot.png")
+plt.close()
+
+# -----------------------------
+# Trait Evolution Plot
+# -----------------------------
+plt.figure(figsize=(10, 5))
+
+plt.plot(data["frame"], data["average_speed"], label="Speed")
+plt.plot(data["frame"], data["average_vision"], label="Vision Radius")
+plt.plot(data["frame"], data["average_energy_loss"], label="Energy Loss")
+
+plt.title("Trait Evolution Over Time")
+plt.xlabel("Frame")
+plt.ylabel("Trait Value")
+plt.legend()
+plt.grid(True)
+
+plt.savefig(f"{PLOTS_FOLDER}/trait_evolution_plot.png")
+plt.close()
+
+print("Plots generated successfully.")
+print(f"Saved in: {PLOTS_FOLDER}/")
