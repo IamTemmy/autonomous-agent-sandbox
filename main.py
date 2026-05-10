@@ -8,17 +8,17 @@ WIDTH = 800
 HEIGHT = 600
 
 AGENT_COUNT = 20
-FOOD_COUNT = 40
+FOOD_COUNT = 18
 
 AGENT_RADIUS = 5
 FOOD_RADIUS = 3
 
 EAT_DISTANCE = 8
-VISION_RADIUS = 120
+VISION_RADIUS = 100
 
 STARTING_ENERGY = 100
-ENERGY_LOSS_RATE = 0.08
-FOOD_ENERGY_GAIN = 30
+ENERGY_LOSS_RATE = 0.14
+FOOD_ENERGY_GAIN = 22
 
 BACKGROUND_COLOR = (20, 20, 20)
 AGENT_COLOR = (0, 255, 100)
@@ -95,7 +95,6 @@ while running:
                 closest_food = food
 
         if closest_food:
-
             direction_x = closest_food["x"] - agent["x"]
             direction_y = closest_food["y"] - agent["y"]
 
