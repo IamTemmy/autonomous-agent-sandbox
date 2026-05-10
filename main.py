@@ -15,16 +15,27 @@ AGENT_RADIUS = 5
 FOOD_RADIUS = 3
 
 EAT_DISTANCE = 8
-VISION_RADIUS = 120
 
-AGENT_SPEED = 2.0
+BASE_SPEED = 2.0
+BASE_VISION_RADIUS = 120
+BASE_ENERGY_LOSS_RATE = 0.14
 
 STARTING_ENERGY = 100
-ENERGY_LOSS_RATE = 0.14
 HAZARD_ENERGY_LOSS_RATE = 0.35
 FOOD_ENERGY_GAIN = 24
 REPRODUCTION_ENERGY = 160
 REPRODUCTION_COST = 70
+
+MUTATION_RATE = 0.12
+
+MIN_SPEED = 1.0
+MAX_SPEED = 3.5
+
+MIN_VISION_RADIUS = 60
+MAX_VISION_RADIUS = 200
+
+MIN_ENERGY_LOSS_RATE = 0.08
+MAX_ENERGY_LOSS_RATE = 0.25
 
 BACKGROUND_COLOR = (20, 20, 20)
 AGENT_COLOR = (0, 255, 100)
@@ -45,16 +56,25 @@ deaths = 0
 hazard_enabled = True
 
 
-def random_velocity():
+def clamp(value, min_value, max_value):
+    return max(min_value, min(max_value, value))
+
+
+def mutate(value, mutation_strength, min_value, max_value):
+    mutation = random.uniform(-mutation_strength, mutation_strength)
+    return clamp(value + mutation, min_value, max_value)
+
+
+def random_velocity(speed):
     angle = random.uniform(0, math.tau)
-    return math.cos(angle) * AGENT_SPEED, math.sin(angle) * AGENT_SPEED
+    return math.cos(angle) * speed, math.sin(angle) * speed
 
 
 def normalize_vector(x, y, speed):
     magnitude = math.hypot(x, y)
 
     if magnitude == 0:
-        return random_velocity()
+        return random_velocity(speed)
 
     return x / magnitude * speed, y / magnitude * speed
 
@@ -68,8 +88,22 @@ def create_food():
             return {"x": x, "y": y}
 
 
-def create_agent(x=None, y=None):
-    dx, dy = random_velocity()
+def create_agent(x=None, y=None, parent=None):
+    if parent:
+        speed = mutate(parent["speed"], MUTATION_RATE, MIN_SPEED, MAX_SPEED)
+        vision_radius = mutate(parent["vision_radius"], 12, MIN_VISION_RADIUS, MAX_VISION_RADIUS)
+        energy_loss_rate = mutate(
+            parent["energy_loss_rate"],
+            0.015,
+            MIN_ENERGY_LOSS_RATE,
+            MAX_ENERGY_LOSS_RATE
+        )
+    else:
+        speed = random.uniform(1.5, 2.5)
+        vision_radius = random.uniform(90, 150)
+        energy_loss_rate = random.uniform(0.11, 0.17)
+
+    dx, dy = random_velocity(speed)
 
     return {
         "x": x if x is not None else random.randint(AGENT_RADIUS, WIDTH - AGENT_RADIUS),
@@ -77,7 +111,10 @@ def create_agent(x=None, y=None):
         "dx": dx,
         "dy": dy,
         "energy": STARTING_ENERGY,
-        "food_eaten": 0
+        "food_eaten": 0,
+        "speed": speed,
+        "vision_radius": vision_radius,
+        "energy_loss_rate": energy_loss_rate
     }
 
 
@@ -93,8 +130,14 @@ def reset_simulation():
 def draw_stats():
     if agents:
         average_energy = sum(agent["energy"] for agent in agents) / len(agents)
+        average_speed = sum(agent["speed"] for agent in agents) / len(agents)
+        average_vision = sum(agent["vision_radius"] for agent in agents) / len(agents)
+        average_energy_loss = sum(agent["energy_loss_rate"] for agent in agents) / len(agents)
     else:
         average_energy = 0
+        average_speed = 0
+        average_vision = 0
+        average_energy_loss = 0
 
     stats = [
         f"Population: {len(agents)}",
@@ -103,6 +146,11 @@ def draw_stats():
         f"Births: {births}",
         f"Deaths: {deaths}",
         f"Hazard: {'ON' if hazard_enabled else 'OFF'}",
+        "",
+        "Traits:",
+        f"Avg Speed: {average_speed:.2f}",
+        f"Avg Vision: {average_vision:.1f}",
+        f"Avg Energy Loss: {average_energy_loss:.3f}",
         "",
         "Controls:",
         "R = Reset",
@@ -168,7 +216,7 @@ while running:
         if hazard_enabled and HAZARD_ZONE.collidepoint(agent_position):
             agent["energy"] -= HAZARD_ENERGY_LOSS_RATE
         else:
-            agent["energy"] -= ENERGY_LOSS_RATE
+            agent["energy"] -= agent["energy_loss_rate"]
 
         if agent["energy"] <= 0:
             agents.remove(agent)
@@ -184,24 +232,28 @@ while running:
                 food["y"] - agent["y"]
             )
 
-            if distance < closest_distance and distance < VISION_RADIUS:
+            if distance < closest_distance and distance < agent["vision_radius"]:
                 closest_distance = distance
                 closest_food = food
 
         if closest_food:
             direction_x = closest_food["x"] - agent["x"]
             direction_y = closest_food["y"] - agent["y"]
-            agent["dx"], agent["dy"] = normalize_vector(direction_x, direction_y, AGENT_SPEED)
+            agent["dx"], agent["dy"] = normalize_vector(
+                direction_x,
+                direction_y,
+                agent["speed"]
+            )
         else:
             if random.random() < 0.03:
-                agent["dx"], agent["dy"] = random_velocity()
+                agent["dx"], agent["dy"] = random_velocity(agent["speed"])
 
         if hazard_enabled and HAZARD_ZONE.collidepoint(agent_position):
             agent["dx"] *= 0.95
             agent["dy"] *= 0.95
 
             if random.random() < 0.08:
-                agent["dx"], agent["dy"] = random_velocity()
+                agent["dx"], agent["dy"] = random_velocity(agent["speed"])
 
         agent["x"] += agent["dx"]
         agent["y"] += agent["dy"]
@@ -242,7 +294,7 @@ while running:
                 min(HEIGHT - AGENT_RADIUS, agent["y"] + random.randint(-15, 15))
             )
 
-            child = create_agent(child_x, child_y)
+            child = create_agent(child_x, child_y, parent=agent)
             child["energy"] = STARTING_ENERGY / 2
 
             newborn_agents.append(child)
