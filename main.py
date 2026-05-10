@@ -1,6 +1,8 @@
 import pygame
 import random
 import math
+import csv
+import os
 from collections import Counter
 
 pygame.init()
@@ -14,7 +16,6 @@ MAX_AGENTS = 60
 
 AGENT_RADIUS = 5
 FOOD_RADIUS = 3
-
 EAT_DISTANCE = 8
 
 STARTING_ENERGY = 100
@@ -28,12 +29,13 @@ COLOR_MUTATION_RATE = 18
 
 MIN_SPEED = 1.0
 MAX_SPEED = 3.5
-
 MIN_VISION_RADIUS = 60
 MAX_VISION_RADIUS = 200
-
 MIN_ENERGY_LOSS_RATE = 0.08
 MAX_ENERGY_LOSS_RATE = 0.25
+
+LOG_INTERVAL_FRAMES = 60
+LOG_FILE = "data/simulation_log.csv"
 
 BACKGROUND_COLOR = (20, 20, 20)
 FOOD_COLOR = (255, 80, 80)
@@ -52,6 +54,7 @@ births = 0
 deaths = 0
 hazard_enabled = True
 next_lineage_id = 1
+frame_count = 0
 
 
 def clamp(value, min_value, max_value):
@@ -147,13 +150,76 @@ def create_agent(x=None, y=None, parent=None):
 
 
 def reset_simulation():
-    global agents, foods, births, deaths, next_lineage_id
+    global agents, foods, births, deaths, next_lineage_id, frame_count
 
     next_lineage_id = 1
     agents = [create_agent() for _ in range(AGENT_COUNT)]
     foods = [create_food() for _ in range(FOOD_COUNT)]
     births = 0
     deaths = 0
+    frame_count = 0
+    initialize_log_file()
+
+
+def get_average_stats():
+    if not agents:
+        return {
+            "average_energy": 0,
+            "average_speed": 0,
+            "average_vision": 0,
+            "average_energy_loss": 0,
+            "living_lineages": 0
+        }
+
+    return {
+        "average_energy": sum(agent["energy"] for agent in agents) / len(agents),
+        "average_speed": sum(agent["speed"] for agent in agents) / len(agents),
+        "average_vision": sum(agent["vision_radius"] for agent in agents) / len(agents),
+        "average_energy_loss": sum(agent["energy_loss_rate"] for agent in agents) / len(agents),
+        "living_lineages": len(set(agent["lineage_id"] for agent in agents))
+    }
+
+
+def initialize_log_file():
+    os.makedirs("data", exist_ok=True)
+
+    with open(LOG_FILE, mode="w", newline="") as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            "frame",
+            "population",
+            "food_count",
+            "births",
+            "deaths",
+            "average_energy",
+            "average_speed",
+            "average_vision",
+            "average_energy_loss",
+            "living_lineages",
+            "hazard_enabled"
+        ])
+
+
+def log_simulation_data():
+    stats = get_average_stats()
+
+    with open(LOG_FILE, mode="a", newline="") as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            frame_count,
+            len(agents),
+            len(foods),
+            births,
+            deaths,
+            round(stats["average_energy"], 3),
+            round(stats["average_speed"], 3),
+            round(stats["average_vision"], 3),
+            round(stats["average_energy_loss"], 5),
+            stats["living_lineages"],
+            hazard_enabled
+        ])
 
 
 def get_lineage_stats():
@@ -178,32 +244,22 @@ def get_lineage_color(lineage_id):
 
 
 def draw_stats():
-    if agents:
-        average_energy = sum(agent["energy"] for agent in agents) / len(agents)
-        average_speed = sum(agent["speed"] for agent in agents) / len(agents)
-        average_vision = sum(agent["vision_radius"] for agent in agents) / len(agents)
-        average_energy_loss = sum(agent["energy_loss_rate"] for agent in agents) / len(agents)
-        living_lineages = len(set(agent["lineage_id"] for agent in agents))
-    else:
-        average_energy = 0
-        average_speed = 0
-        average_vision = 0
-        average_energy_loss = 0
-        living_lineages = 0
+    stats_data = get_average_stats()
 
     stats = [
         f"Population: {len(agents)}",
         f"Food: {len(foods)}",
-        f"Average Energy: {average_energy:.1f}",
+        f"Average Energy: {stats_data['average_energy']:.1f}",
         f"Births: {births}",
         f"Deaths: {deaths}",
-        f"Living Lineages: {living_lineages}",
+        f"Living Lineages: {stats_data['living_lineages']}",
         f"Hazard: {'ON' if hazard_enabled else 'OFF'}",
+        f"Logging: {LOG_FILE}",
         "",
         "Traits:",
-        f"Avg Speed: {average_speed:.2f}",
-        f"Avg Vision: {average_vision:.1f}",
-        f"Avg Energy Loss: {average_energy_loss:.3f}",
+        f"Avg Speed: {stats_data['average_speed']:.2f}",
+        f"Avg Vision: {stats_data['average_vision']:.1f}",
+        f"Avg Energy Loss: {stats_data['average_energy_loss']:.3f}",
         "",
         "Top Lineages:"
     ]
@@ -251,6 +307,8 @@ reset_simulation()
 running = True
 
 while running:
+
+    frame_count += 1
 
     screen.fill(BACKGROUND_COLOR)
 
@@ -388,6 +446,9 @@ while running:
         )
 
     agents.extend(newborn_agents)
+
+    if frame_count % LOG_INTERVAL_FRAMES == 0:
+        log_simulation_data()
 
     draw_stats()
 
