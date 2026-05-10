@@ -9,6 +9,7 @@ HEIGHT = 600
 
 AGENT_COUNT = 20
 FOOD_COUNT = 18
+MAX_AGENTS = 60
 
 AGENT_RADIUS = 5
 FOOD_RADIUS = 3
@@ -19,6 +20,8 @@ VISION_RADIUS = 100
 STARTING_ENERGY = 100
 ENERGY_LOSS_RATE = 0.14
 FOOD_ENERGY_GAIN = 22
+REPRODUCTION_ENERGY = 160
+REPRODUCTION_COST = 70
 
 BACKGROUND_COLOR = (20, 20, 20)
 AGENT_COLOR = (0, 255, 100)
@@ -41,10 +44,10 @@ def create_food():
     }
 
 
-def create_agent():
+def create_agent(x=None, y=None):
     return {
-        "x": random.randint(AGENT_RADIUS, WIDTH - AGENT_RADIUS),
-        "y": random.randint(AGENT_RADIUS, HEIGHT - AGENT_RADIUS),
+        "x": x if x is not None else random.randint(AGENT_RADIUS, WIDTH - AGENT_RADIUS),
+        "y": y if y is not None else random.randint(AGENT_RADIUS, HEIGHT - AGENT_RADIUS),
         "dx": random_velocity(),
         "dy": random_velocity(),
         "energy": STARTING_ENERGY,
@@ -72,6 +75,8 @@ while running:
             (food["x"], food["y"]),
             FOOD_RADIUS
         )
+
+    newborn_agents = []
 
     for agent in agents[:]:
 
@@ -127,6 +132,17 @@ while running:
                 agent["food_eaten"] += 1
                 agent["energy"] += FOOD_ENERGY_GAIN
 
+        if agent["energy"] >= REPRODUCTION_ENERGY and len(agents) + len(newborn_agents) < MAX_AGENTS:
+            agent["energy"] -= REPRODUCTION_COST
+
+            child_x = max(AGENT_RADIUS, min(WIDTH - AGENT_RADIUS, agent["x"] + random.randint(-15, 15)))
+            child_y = max(AGENT_RADIUS, min(HEIGHT - AGENT_RADIUS, agent["y"] + random.randint(-15, 15)))
+
+            child = create_agent(child_x, child_y)
+            child["energy"] = STARTING_ENERGY / 2
+
+            newborn_agents.append(child)
+
         dynamic_radius = max(3, min(12, int(agent["energy"] / 15)))
 
         pygame.draw.circle(
@@ -135,6 +151,8 @@ while running:
             (int(agent["x"]), int(agent["y"])),
             dynamic_radius
         )
+
+    agents.extend(newborn_agents)
 
     pygame.display.flip()
     clock.tick(60)
