@@ -47,7 +47,6 @@ PRESETS = {
     }
 }
 
-
 parser = argparse.ArgumentParser(description="Run the Autonomous Agent Sandbox simulation.")
 parser.add_argument(
     "--preset",
@@ -85,7 +84,8 @@ MIN_ENERGY_LOSS_RATE = 0.08
 MAX_ENERGY_LOSS_RATE = 0.25
 
 LOG_INTERVAL_FRAMES = 60
-LOG_FILE = "data/simulation_log.csv"
+SIMULATION_LOG_FILE = "data/simulation_log.csv"
+AGENT_LOG_FILE = "data/agent_log.csv"
 
 BACKGROUND_COLOR = (20, 20, 20)
 FOOD_COLOR = (255, 80, 80)
@@ -104,6 +104,7 @@ births = 0
 deaths = 0
 hazard_enabled = True
 next_lineage_id = 1
+next_agent_id = 1
 frame_count = 0
 
 
@@ -158,7 +159,7 @@ def create_food():
 
 
 def create_agent(x=None, y=None, parent=None):
-    global next_lineage_id
+    global next_lineage_id, next_agent_id
 
     if parent:
         speed = mutate(parent["speed"], MUTATION_RATE, MIN_SPEED, MAX_SPEED)
@@ -172,6 +173,7 @@ def create_agent(x=None, y=None, parent=None):
 
         color = mutate_color(parent["color"])
         lineage_id = parent["lineage_id"]
+        parent_id = parent["agent_id"]
 
     else:
         speed = random.uniform(1.5, 2.5)
@@ -181,28 +183,36 @@ def create_agent(x=None, y=None, parent=None):
         color = random_agent_color()
         lineage_id = next_lineage_id
         next_lineage_id += 1
+        parent_id = None
 
     dx, dy = random_velocity(speed)
 
-    return {
+    agent = {
+        "agent_id": next_agent_id,
+        "parent_id": parent_id,
+        "lineage_id": lineage_id,
         "x": x if x is not None else random.randint(AGENT_RADIUS, WIDTH - AGENT_RADIUS),
         "y": y if y is not None else random.randint(AGENT_RADIUS, HEIGHT - AGENT_RADIUS),
         "dx": dx,
         "dy": dy,
         "energy": STARTING_ENERGY,
         "food_eaten": 0,
+        "birth_count": 0,
         "speed": speed,
         "vision_radius": vision_radius,
         "energy_loss_rate": energy_loss_rate,
         "color": color,
-        "lineage_id": lineage_id
+        "birth_frame": frame_count
     }
 
+    next_agent_id += 1
+    return agent
 
-def initialize_log_file():
+
+def initialize_simulation_log_file():
     os.makedirs("data", exist_ok=True)
 
-    with open(LOG_FILE, mode="w", newline="") as file:
+    with open(SIMULATION_LOG_FILE, mode="w", newline="") as file:
         writer = csv.writer(file)
 
         writer.writerow([
@@ -222,16 +232,80 @@ def initialize_log_file():
         ])
 
 
+def initialize_agent_log_file():
+    os.makedirs("data", exist_ok=True)
+
+    with open(AGENT_LOG_FILE, mode="w", newline="") as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            "agent_id",
+            "parent_id",
+            "lineage_id",
+            "preset",
+            "status",
+            "birth_frame",
+            "end_frame",
+            "lifespan_seconds",
+            "speed",
+            "vision_radius",
+            "energy_loss_rate",
+            "food_eaten",
+            "birth_count",
+            "final_energy",
+            "death_x",
+            "death_y",
+            "died_in_hazard"
+        ])
+
+
+def log_agent(agent, status):
+    agent_position = (int(agent["x"]), int(agent["y"]))
+    died_in_hazard = hazard_enabled and HAZARD_ZONE.collidepoint(agent_position)
+
+    with open(AGENT_LOG_FILE, mode="a", newline="") as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            agent["agent_id"],
+            agent["parent_id"],
+            agent["lineage_id"],
+            EXPERIMENT_PRESET,
+            status,
+            agent["birth_frame"],
+            frame_count,
+            round((frame_count - agent["birth_frame"]) / FPS, 2),
+            round(agent["speed"], 3),
+            round(agent["vision_radius"], 3),
+            round(agent["energy_loss_rate"], 5),
+            agent["food_eaten"],
+            agent["birth_count"],
+            round(agent["energy"], 3),
+            round(agent["x"], 2),
+            round(agent["y"], 2),
+            died_in_hazard
+        ])
+
+
+def log_surviving_agents():
+    for agent in agents:
+        log_agent(agent, "survived")
+
+
 def reset_simulation():
-    global agents, foods, births, deaths, next_lineage_id, frame_count
+    global agents, foods, births, deaths, next_lineage_id, next_agent_id, frame_count
 
     next_lineage_id = 1
-    agents = [create_agent() for _ in range(AGENT_COUNT)]
-    foods = [create_food() for _ in range(FOOD_COUNT)]
+    next_agent_id = 1
     births = 0
     deaths = 0
     frame_count = 0
-    initialize_log_file()
+
+    initialize_simulation_log_file()
+    initialize_agent_log_file()
+
+    agents = [create_agent() for _ in range(AGENT_COUNT)]
+    foods = [create_food() for _ in range(FOOD_COUNT)]
 
 
 def get_average_stats():
@@ -256,7 +330,7 @@ def get_average_stats():
 def log_simulation_data():
     stats = get_average_stats()
 
-    with open(LOG_FILE, mode="a", newline="") as file:
+    with open(SIMULATION_LOG_FILE, mode="a", newline="") as file:
         writer = csv.writer(file)
 
         writer.writerow([
@@ -310,7 +384,8 @@ def draw_stats():
         f"Living Lineages: {stats_data['living_lineages']}",
         f"Hazard: {'ON' if hazard_enabled else 'OFF'}",
         f"Time: {frame_count / FPS:.1f}s",
-        f"Logging: {LOG_FILE}",
+        f"Logging: {SIMULATION_LOG_FILE}",
+        f"Agent Log: {AGENT_LOG_FILE}",
         "",
         "Traits:",
         f"Avg Speed: {stats_data['average_speed']:.2f}",
@@ -410,6 +485,7 @@ while running:
             agent["energy"] -= agent["energy_loss_rate"]
 
         if agent["energy"] <= 0:
+            log_agent(agent, "died")
             agents.remove(agent)
             deaths += 1
             continue
@@ -475,6 +551,7 @@ while running:
 
         if agent["energy"] >= REPRODUCTION_ENERGY and len(agents) + len(newborn_agents) < MAX_AGENTS:
             agent["energy"] -= REPRODUCTION_COST
+            agent["birth_count"] += 1
 
             child_x = max(
                 AGENT_RADIUS,
@@ -511,4 +588,5 @@ while running:
     pygame.display.flip()
     clock.tick(FPS)
 
+log_surviving_agents()
 pygame.quit()
