@@ -38,6 +38,15 @@ def summarize_group(label, group):
     if "sensor_noise" in group.columns:
         print(f"Avg Sensor Noise: {group['sensor_noise'].mean():.3f}")
 
+    if "uncertainty_tolerance" in group.columns:
+        print(f"Avg Uncertainty Tolerance: {group['uncertainty_tolerance'].mean():.3f}")
+
+    if "average_selected_target_confidence" in group.columns:
+        print(f"Avg Selected Target Confidence: {group['average_selected_target_confidence'].mean():.3f}")
+
+    if "low_confidence_decisions" in group.columns:
+        print(f"Avg Low-Confidence Decisions: {group['low_confidence_decisions'].mean():.2f}")
+
     print(f"Avg Food Eaten: {group['food_eaten'].mean():.2f}")
     print(f"Avg Birth Count: {group['birth_count'].mean():.2f}")
     print(f"Avg Final Energy: {group['final_energy'].mean():.2f}")
@@ -75,7 +84,7 @@ duration = simulation_data["time_seconds"].iloc[-1]
 survivors = agent_data[agent_data["status"] == "survived"]
 dead_agents = agent_data[agent_data["status"] == "died"]
 
-print("\nAUTONOMOUS AGENT SANDBOX — EXPERIMENT SUMMARY")
+print("\nEVOSENSE - EXPERIMENT SUMMARY")
 print("=" * 60)
 
 print(f"Preset: {preset}")
@@ -112,6 +121,16 @@ if "average_sensor_noise" in simulation_data.columns:
     end_noise = simulation_data["average_sensor_noise"].iloc[-1]
     print(f"Avg Sensor Noise: {start_noise:.3f} → {end_noise:.3f}")
 
+if "average_uncertainty_tolerance" in simulation_data.columns:
+    start_uncertainty = simulation_data["average_uncertainty_tolerance"].iloc[0]
+    end_uncertainty = simulation_data["average_uncertainty_tolerance"].iloc[-1]
+    print(f"Avg Uncertainty Tolerance: {start_uncertainty:.3f} → {end_uncertainty:.3f}")
+
+if "average_selected_target_confidence" in simulation_data.columns:
+    start_selected_confidence = simulation_data["average_selected_target_confidence"].iloc[0]
+    end_selected_confidence = simulation_data["average_selected_target_confidence"].iloc[-1]
+    print(f"Avg Selected Target Confidence: {start_selected_confidence:.3f} → {end_selected_confidence:.3f}")
+
 print_section("Lineages")
 print(f"Living Lineages: {start_lineages} → {end_lineages}")
 
@@ -133,6 +152,12 @@ if "lineage_id" in agent_data.columns:
 
     if "sensor_noise" in agent_data.columns:
         aggregation_fields["avg_sensor_noise"] = ("sensor_noise", "mean")
+
+    if "uncertainty_tolerance" in agent_data.columns:
+        aggregation_fields["avg_uncertainty_tolerance"] = ("uncertainty_tolerance", "mean")
+
+    if "average_selected_target_confidence" in agent_data.columns:
+        aggregation_fields["avg_selected_confidence"] = ("average_selected_target_confidence", "mean")
 
     lineage_summary = (
         agent_data
@@ -161,6 +186,12 @@ if "lineage_id" in agent_data.columns:
 
         if "avg_sensor_noise" in row:
             line += f", avg noise {row['avg_sensor_noise']:.3f}"
+
+        if "avg_uncertainty_tolerance" in row:
+            line += f", avg uncertainty {row['avg_uncertainty_tolerance']:.3f}"
+
+        if "avg_selected_confidence" in row:
+            line += f", avg confidence {row['avg_selected_confidence']:.3f}"
 
         print(line)
 
@@ -203,6 +234,16 @@ if not survivors.empty and not dead_agents.empty:
         survivor_noise = survivors["sensor_noise"].mean()
         dead_noise = dead_agents["sensor_noise"].mean()
         print(f"Sensor Noise Difference: survivors {survivor_noise:.3f} vs dead {dead_noise:.3f}")
+
+    if "uncertainty_tolerance" in agent_data.columns:
+        survivor_uncertainty = survivors["uncertainty_tolerance"].mean()
+        dead_uncertainty = dead_agents["uncertainty_tolerance"].mean()
+        print(f"Uncertainty Tolerance Difference: survivors {survivor_uncertainty:.3f} vs dead {dead_uncertainty:.3f}")
+
+    if "average_selected_target_confidence" in agent_data.columns:
+        survivor_confidence = survivors["average_selected_target_confidence"].mean()
+        dead_confidence = dead_agents["average_selected_target_confidence"].mean()
+        print(f"Selected Confidence Difference: survivors {survivor_confidence:.3f} vs dead {dead_confidence:.3f}")
 else:
     print("Not enough survivor/death contrast for comparison.")
 
@@ -242,6 +283,41 @@ if "sensor_noise" in agent_data.columns:
             print("\nSensor noise was similar between survivors and dead agents.")
 else:
     print("Sensor noise data unavailable. Run the latest main.py first.")
+
+print_section("Confidence-Aware Foraging Analysis")
+
+if "average_selected_target_confidence" in simulation_data.columns:
+    final_low_confidence_decisions = (
+        simulation_data["low_confidence_decisions"].iloc[-1]
+        if "low_confidence_decisions" in simulation_data.columns
+        else 0
+    )
+    final_high_confidence_decisions = (
+        simulation_data["high_confidence_decisions"].iloc[-1]
+        if "high_confidence_decisions" in simulation_data.columns
+        else 0
+    )
+
+    print(f"End Avg Perception Confidence: {simulation_data['average_perception_confidence'].iloc[-1]:.3f}")
+    print(f"End Avg Selected Target Confidence: {simulation_data['average_selected_target_confidence'].iloc[-1]:.3f}")
+    print(f"Low-Confidence Decisions: {final_low_confidence_decisions}")
+    print(f"High-Confidence Decisions: {final_high_confidence_decisions}")
+
+    if "average_selected_target_confidence" in agent_data.columns:
+        highest_confidence_agents = agent_data.nlargest(5, "average_selected_target_confidence")
+        lowest_confidence_agents = agent_data.nsmallest(5, "average_selected_target_confidence")
+
+        print("\nHighest-Confidence Targeting Agents")
+        print(f"Avg Lifespan: {highest_confidence_agents['lifespan_seconds'].mean():.2f} seconds")
+        print(f"Avg Food Eaten: {highest_confidence_agents['food_eaten'].mean():.2f}")
+        print(f"Avg Birth Count: {highest_confidence_agents['birth_count'].mean():.2f}")
+
+        print("\nLowest-Confidence Targeting Agents")
+        print(f"Avg Lifespan: {lowest_confidence_agents['lifespan_seconds'].mean():.2f} seconds")
+        print(f"Avg Food Eaten: {lowest_confidence_agents['food_eaten'].mean():.2f}")
+        print(f"Avg Birth Count: {lowest_confidence_agents['birth_count'].mean():.2f}")
+else:
+    print("Confidence metrics unavailable. Run the latest main.py first.")
 
 print_section("Interpretation")
 
@@ -283,3 +359,9 @@ if not survivors.empty and not dead_agents.empty:
             print("Lower sensor noise appears beneficial in this run, likely because more accurate perception improved food targeting.")
         elif survivor_noise > dead_noise:
             print("Higher sensor noise did not prevent survival in this run, suggesting environment layout or other traits were more important.")
+
+    if "average_selected_target_confidence" in agent_data.columns:
+        if survivor_confidence > dead_confidence:
+            print("Survivors selected higher-confidence food targets on average, suggesting confidence-aware foraging improved survival.")
+        elif survivor_confidence < dead_confidence:
+            print("Survivors selected lower-confidence targets on average, suggesting hunger, risk tolerance, or food layout outweighed confidence in this run.")

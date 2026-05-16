@@ -70,6 +70,7 @@ EvoSense should be understood as a bio-inspired autonomy sandbox, not a vehicle 
 * Reproduction system.
 * Hazard avoidance movement.
 * Risk-aware food selection.
+* Confidence-aware foraging.
 
 ### Bio-Inspired Evolution
 
@@ -79,6 +80,7 @@ EvoSense should be understood as a bio-inspired autonomy sandbox, not a vehicle 
 * Vision radius variation.
 * Energy efficiency variation.
 * Risk tolerance variation.
+* Uncertainty tolerance variation.
 * Lineage tracking.
 * Emergent survival strategies.
 
@@ -87,6 +89,7 @@ EvoSense should be understood as a bio-inspired autonomy sandbox, not a vehicle 
 * Vision radius sensing.
 * Sensor noise.
 * Imperfect perception.
+* Interpretable food-location confidence scores.
 * Sensor visualization mode.
 * Environmental awareness.
 * Risk-based movement logic.
@@ -102,6 +105,7 @@ EvoSense should be understood as a bio-inspired autonomy sandbox, not a vehicle 
 * Birth and death metrics.
 * Lineage analysis.
 * Sensor noise analysis.
+* Confidence-aware foraging analysis.
 * Plot generation.
 
 ---
@@ -120,13 +124,17 @@ Hazards introduce danger into the environment. Agents must balance the reward of
 
 Agents do not operate with perfect knowledge. Vision radius and sensor noise create perception limits that affect food targeting, hazard avoidance, and survival outcomes.
 
+### Confidence-Aware Foraging
+
+Agents estimate confidence for perceived food targets using distance, sensor noise, and hazard proximity. Food selection balances distance, confidence, hazard risk, risk tolerance, and an inherited uncertainty-tolerance trait.
+
 ### Inherited Traits
 
 Agents pass traits to offspring with mutation. Over time, population behavior can shift as different trait combinations survive under different environmental presets.
 
 ### Telemetry-Driven Analysis
 
-The project records population trends, energy values, trait distributions, survival outcomes, lineage data, and sensor-noise effects so behavior can be inspected after each run.
+The project records population trends, energy values, trait distributions, survival outcomes, lineage data, sensor-noise effects, and confidence-aware foraging metrics so behavior can be inspected after each run.
 
 ---
 
@@ -237,7 +245,7 @@ python3 summarize_results.py
 * v3.2 — Sensor Noise Analytics
 * v3.3 — Sensor Noise Visualization
 * v3.4 — Modular Architecture Refactor
-* v3.5 — Confidence-Aware Foraging
+* v3.5 — Confidence-Aware Foraging (implemented)
 * v3.6 — Agent Memory of Risk and Reward
 * v3.7 — Experiment Comparison Mode
 * v4.0 — Portfolio Release
@@ -283,7 +291,9 @@ Includes:
 * Trait inheritance.
 * Mutation.
 * Sensor noise.
+* Uncertainty tolerance.
 * Risk-aware food selection.
+* Confidence-aware food selection.
 * Hazard avoidance movement.
 
 ### `environment.py`
@@ -331,6 +341,7 @@ Includes:
 * Births/deaths plots.
 * Trait evolution plots.
 * Sensor noise plots.
+* Confidence-aware foraging plots.
 
 ### `summarize_results.py`
 
@@ -342,6 +353,7 @@ Includes:
 * Survivor vs dead-agent comparison.
 * Lineage analysis.
 * Sensor noise analysis.
+* Confidence-aware foraging analysis.
 * Interpretation of experiment outcomes.
 
 ---

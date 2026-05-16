@@ -46,6 +46,8 @@ class SimulationEnvironment:
         self.next_lineage_id = 1
         self.next_agent_id = 1
         self.frame_count = 0
+        self.low_confidence_decisions = 0
+        self.high_confidence_decisions = 0
         self.agents = []
         self.foods = []
 
@@ -55,6 +57,8 @@ class SimulationEnvironment:
         self.births = 0
         self.deaths = 0
         self.frame_count = 0
+        self.low_confidence_decisions = 0
+        self.high_confidence_decisions = 0
 
         initialize_simulation_log_file()
         initialize_agent_log_file()
@@ -93,8 +97,18 @@ class SimulationEnvironment:
                 "average_energy_loss": 0,
                 "average_risk_tolerance": 0,
                 "average_sensor_noise": 0,
+                "average_uncertainty_tolerance": 0,
+                "average_perception_confidence": 0,
+                "average_selected_target_confidence": 0,
+                "low_confidence_decisions": self.low_confidence_decisions,
+                "high_confidence_decisions": self.high_confidence_decisions,
                 "living_lineages": 0
             }
+
+        total_perception_confidence = sum(agent["perception_confidence_total"] for agent in self.agents)
+        total_perceptions = sum(agent["perception_count"] for agent in self.agents)
+        total_selected_confidence = sum(agent["selected_confidence_total"] for agent in self.agents)
+        total_selected_targets = sum(agent["selected_target_count"] for agent in self.agents)
 
         return {
             "average_energy": sum(agent["energy"] for agent in self.agents) / len(self.agents),
@@ -103,6 +117,15 @@ class SimulationEnvironment:
             "average_energy_loss": sum(agent["energy_loss_rate"] for agent in self.agents) / len(self.agents),
             "average_risk_tolerance": sum(agent["risk_tolerance"] for agent in self.agents) / len(self.agents),
             "average_sensor_noise": sum(agent["sensor_noise"] for agent in self.agents) / len(self.agents),
+            "average_uncertainty_tolerance": sum(agent["uncertainty_tolerance"] for agent in self.agents) / len(self.agents),
+            "average_perception_confidence": (
+                total_perception_confidence / total_perceptions if total_perceptions else 0
+            ),
+            "average_selected_target_confidence": (
+                total_selected_confidence / total_selected_targets if total_selected_targets else 0
+            ),
+            "low_confidence_decisions": self.low_confidence_decisions,
+            "high_confidence_decisions": self.high_confidence_decisions,
             "living_lineages": len(set(agent["lineage_id"] for agent in self.agents))
         }
 

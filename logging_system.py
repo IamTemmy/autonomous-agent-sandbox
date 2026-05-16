@@ -24,6 +24,11 @@ def initialize_simulation_log_file():
             "average_energy_loss",
             "average_risk_tolerance",
             "average_sensor_noise",
+            "average_uncertainty_tolerance",
+            "average_perception_confidence",
+            "average_selected_target_confidence",
+            "low_confidence_decisions",
+            "high_confidence_decisions",
             "living_lineages",
             "hazard_enabled"
         ])
@@ -49,18 +54,33 @@ def initialize_agent_log_file():
             "energy_loss_rate",
             "risk_tolerance",
             "sensor_noise",
+            "uncertainty_tolerance",
             "food_eaten",
             "birth_count",
             "final_energy",
             "death_x",
             "death_y",
-            "died_in_hazard"
+            "died_in_hazard",
+            "average_perception_confidence",
+            "average_selected_target_confidence",
+            "low_confidence_decisions",
+            "high_confidence_decisions"
         ])
 
 
 def log_agent(environment, agent, status):
     agent_position = (int(agent["x"]), int(agent["y"]))
     died_in_hazard = environment.hazard_enabled and HAZARD_ZONE.collidepoint(agent_position)
+    average_perception_confidence = (
+        agent["perception_confidence_total"] / agent["perception_count"]
+        if agent["perception_count"]
+        else 0
+    )
+    average_selected_target_confidence = (
+        agent["selected_confidence_total"] / agent["selected_target_count"]
+        if agent["selected_target_count"]
+        else 0
+    )
 
     with open(AGENT_LOG_FILE, mode="a", newline="") as file:
         writer = csv.writer(file)
@@ -79,12 +99,17 @@ def log_agent(environment, agent, status):
             round(agent["energy_loss_rate"], 5),
             round(agent["risk_tolerance"], 3),
             round(agent["sensor_noise"], 3),
+            round(agent["uncertainty_tolerance"], 3),
             agent["food_eaten"],
             agent["birth_count"],
             round(agent["energy"], 3),
             round(agent["x"], 2),
             round(agent["y"], 2),
-            died_in_hazard
+            died_in_hazard,
+            round(average_perception_confidence, 3),
+            round(average_selected_target_confidence, 3),
+            agent["low_confidence_decisions"],
+            agent["high_confidence_decisions"]
         ])
 
 
@@ -113,6 +138,11 @@ def log_simulation_data(environment):
             round(stats["average_energy_loss"], 5),
             round(stats["average_risk_tolerance"], 3),
             round(stats["average_sensor_noise"], 3),
+            round(stats["average_uncertainty_tolerance"], 3),
+            round(stats["average_perception_confidence"], 3),
+            round(stats["average_selected_target_confidence"], 3),
+            stats["low_confidence_decisions"],
+            stats["high_confidence_decisions"],
             stats["living_lineages"],
             environment.hazard_enabled
         ])

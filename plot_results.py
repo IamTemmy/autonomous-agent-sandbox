@@ -51,6 +51,8 @@ if "average_risk_tolerance" in data.columns:
     plt.plot(data["time_seconds"], data["average_risk_tolerance"], label="Risk Tolerance")
 if "average_sensor_noise" in data.columns:
     plt.plot(data["time_seconds"], data["average_sensor_noise"], label="Sensor Noise")
+if "average_uncertainty_tolerance" in data.columns:
+    plt.plot(data["time_seconds"], data["average_uncertainty_tolerance"], label="Uncertainty Tolerance")
 plt.title(f"Trait Evolution Over Time - Preset: {preset_name}")
 plt.xlabel("Time (seconds)")
 plt.ylabel("Trait Value")
@@ -67,6 +69,37 @@ if "average_sensor_noise" in data.columns:
     plt.ylabel("Average Sensor Noise")
     plt.grid(True)
     plt.savefig(f"{PLOTS_FOLDER}/sensor_noise_plot.png")
+    plt.close()
+
+if (
+    "average_perception_confidence" in data.columns
+    and "average_selected_target_confidence" in data.columns
+):
+    plt.figure(figsize=(10, 5))
+    plt.plot(data["time_seconds"], data["average_perception_confidence"], label="Avg Perceived Food Confidence")
+    plt.plot(data["time_seconds"], data["average_selected_target_confidence"], label="Avg Selected Target Confidence")
+    plt.title(f"Confidence-Aware Foraging Over Time - Preset: {preset_name}")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Confidence")
+    plt.ylim(0, 1)
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"{PLOTS_FOLDER}/confidence_foraging_plot.png")
+    plt.close()
+
+if (
+    "low_confidence_decisions" in data.columns
+    and "high_confidence_decisions" in data.columns
+):
+    plt.figure(figsize=(10, 5))
+    plt.plot(data["time_seconds"], data["low_confidence_decisions"], label="Low Confidence Decisions")
+    plt.plot(data["time_seconds"], data["high_confidence_decisions"], label="High Confidence Decisions")
+    plt.title(f"Confidence Decision Counts - Preset: {preset_name}")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Cumulative Decisions")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"{PLOTS_FOLDER}/confidence_decisions_plot.png")
     plt.close()
 
 print("Plots generated successfully.")

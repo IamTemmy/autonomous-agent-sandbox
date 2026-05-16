@@ -7,3 +7,6 @@ plots/*.png
 
 # Local screenshots
 Screenshot*.png
+# Python cache
+__pycache__/
+*.pyc

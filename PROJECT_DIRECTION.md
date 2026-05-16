@@ -79,6 +79,8 @@ EvoSense simplifies those ideas into an interpretable simulation. Instead of mod
 - Sensor visualization.
 - Sensor noise.
 - Imperfect food perception through Gaussian position error.
+- Confidence-aware food selection.
+- Uncertainty tolerance.
 - Risk-aware behavior around hazardous regions.
 
 ### Analytics and Interpretability
@@ -89,6 +91,7 @@ EvoSense simplifies those ideas into an interpretable simulation. Instead of mod
 - Birth/death tracking.
 - Trait evolution plots.
 - Sensor noise plots.
+- Confidence-aware foraging plots.
 - Hazard-death metrics.
 - Summary reports.
 - Modular architecture and documentation.
@@ -164,7 +167,7 @@ Code organization improvements that separate simulation configuration, environme
 
 ### v3.5 - Confidence-Aware Foraging
 
-Planned feature. Agents should estimate confidence in perceived food locations and use that confidence when selecting targets under noise, distance, energy pressure, and hazard risk.
+Implemented feature. Agents estimate confidence in perceived food locations and use that confidence when selecting targets under noise, distance, energy pressure, and hazard risk.
 
 ### v3.6 - Agent Memory of Risk and Reward
 
@@ -180,7 +183,7 @@ Planned release. The project should be stable, well documented, easy to run, vis
 
 ## 11. v3.5 Feature Definition: Confidence-Aware Foraging
 
-The next feature should be Confidence-Aware Foraging.
+Confidence-Aware Foraging is implemented in v3.5.
 
 Agents should not only perceive food with noisy sensors. They should estimate how confident they are in what they perceive.
 

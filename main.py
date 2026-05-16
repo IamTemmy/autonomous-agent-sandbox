@@ -15,7 +15,7 @@ from visualization import (
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run the Autonomous Agent Sandbox simulation.")
+    parser = argparse.ArgumentParser(description="Run the EvoSense bio-inspired autonomy sandbox.")
     parser.add_argument(
         "--preset",
         choices=PRESETS.keys(),
